@@ -288,4 +288,81 @@ check_info["redis_info.clients"] = {
     "has_perfdata": True,
     "group": "redis_info_clients",
 }
+
+#   .--Memory--------------------------------------------------------------.
+#   |                 __  __                                               |
+#   |                |  \/  | ___ _ __ ___   ___  _ __ _   _               |
+#   |                | |\/| |/ _ \ '_ ` _ \ / _ \| '__| | | |              |
+#   |                | |  | |  __/ | | | | | (_) | |  | |_| |              |
+#   |                |_|  |_|\___|_| |_| |_|\___/|_|   \__, |              |
+#   |                                                  |___/               |
+#   +----------------------------------------------------------------------+
+#   |                                                                      |
+#   '----------------------------------------------------------------------'
+
+
+# ...
+# Memory
+# used_memory:751842168
+# used_memory_rss:859328512
+# used_memory_peak:9748061832
+# used_memory_overhead:6610194
+# used_memory_dataset:745231974
+# used_memory_startup:796216
+# used_memory_lua:41984
+# used_memory_scripts:0
+
+
+# Description of possible output:
+# used_memory - Total number of bytes allocated by Redis using its allocator
+# used_memory_rss - Number of bytes that Redis allocated as seen by the operating system (a.k.a resident set size)
+# used_memory_peak - Peak memory consumed by Redis
+# used_memory_overhead - The sum in bytes of all overheads that the server allocated for managing its internal data structures
+# used_memory_dataset - The size in bytes of the dataset
+# used_memory_startup -  Initial amount of memory consumed by Redis at startup
+# used_memory_lua - Number of bytes used by the Lua engine
+# used_memory_scripts - Number of bytes used by cached Lua scripts
+
+
+
+def check_redis_info_memory(item, params, item_data):
+    memory_data = item_data.get(item, {}).get("Memory")
+    if not memory_data or memory_data is None:
+        return
+
+    for data_key, param_key, infotext in [
+        ("used_memory", "used_memory", "Total used memory"),
+        ("used_memory_rss", "used_memory_rss", "Resident set size"),
+        ("used_memory_peak", "used_memory_peak", "Peak memory"),
+        ("used_memory_overhead", "used_memory_overhead", "Overhead memory"),
+        ("used_memory_dataset", "used_memory_dataset", "Dataset size"),
+        ("used_memory_startup", "used_memory_startup", "Startup memory"),
+        ("used_memory_lua", "used_memory_lua", "Memory of Lua engine"),
+        ("used_memory_scripts", "used_memory_scripts", "Memory of Lua scripts"),
+    ]:
+
+        memory_value = memory_data.get(data_key)
+        if memory_value is None:
+            continue
+
+        upper_level = params.get("%s_upper" % param_key, (None, None))
+        lower_level = params.get("%s_lower" % param_key, (None, None))
+
+        yield check_levels(
+            memory_value,
+            "%s" % param_key,
+            upper_level + lower_level,
+            human_readable_func=get_bytes_human_readable,
+            infoname=infotext,
+        )
+
+check_info["redis_info.memory"] = {
+    "check_function": check_redis_info_memory,
+    "inventory_function": discover(lambda k, values: "Memory" in values),
+    "service_description": "Redis %s Memory",
+    "has_perfdata": True,
+    "group": "redis_info_memory",
+}
+
+
 # .
