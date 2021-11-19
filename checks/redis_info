@@ -345,13 +345,12 @@ def check_redis_info_memory(item, params, item_data):
         if memory_value is None:
             continue
 
-        upper_level = params.get("%s_upper" % param_key, (None, None))
-        lower_level = params.get("%s_lower" % param_key, (None, None))
-
+        levels = params.get(param_key, (None, None))
+   
         yield check_levels(
             memory_value,
-            "%s" % param_key,
-            upper_level + lower_level,
+            param_key,
+            levels,
             human_readable_func=get_bytes_human_readable,
             infoname=infotext,
         )
