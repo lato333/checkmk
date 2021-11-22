@@ -288,4 +288,48 @@ check_info["redis_info.clients"] = {
     "has_perfdata": True,
     "group": "redis_info_clients",
 }
-# .
+
+#   .--Keyspace------------------------------------------------------------.
+#   |            _  __                                                     |
+#   |           | |/ /___ _   _ ___ _ __   __ _  ___ ___                   |
+#   |           | ' // _ \ | | / __| '_ \ / _` |/ __/ _ \                  |
+#   |           | . \  __/ |_| \__ \ |_) | (_| | (_|  __/                  |
+#   |           |_|\_\___|\__, |___/ .__/ \__,_|\___\___|                  |
+#   |                     |___/    |_|                                     |
+#   +----------------------------------------------------------------------+
+#   |                                                                      |
+#   '----------------------------------------------------------------------'
+
+# ...
+# Keyspace
+# db0:keys=66651,expires=66366,avg_ttl=16785303
+# db1:...
+
+
+
+def check_redis_info_keyspace(item, params, item_data):
+    keyspace_data = item_data.get(item, {}).get("Keyspace")
+    if not keyspace_data or keyspace_data is None:
+        return
+
+    for db in keyspace_data:
+        res = dict(item.split("=") for item in keyspace_data[db].split(","))
+        perfdata = []
+
+        for key in res.keys():
+           perfdata.append( (key, res[key]) )
+
+        yield 0, "%s: %s" % (db, keyspace_data[db]), perfdata
+
+
+check_info["redis_info.keyspace"] = {
+    "check_function": check_redis_info_keyspace,
+    "inventory_function": discover(lambda k, values: "Keyspace" in values),
+    "service_description": "Redis %s Keyspace",
+    "has_perfdata": True,
+    "group": "redis_info_keyspace",
+}
+
+
+
+#.
